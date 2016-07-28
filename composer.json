@@ -24,7 +24,7 @@
     "require": {
         "symfony/framework-bundle": "2.*",
         "symfony/console": "2.*",
-        "maxmind-db/reader": "0.3.*"
+        "maxmind-db/reader": "1.1.*"
     },
     "require-dev": {
         "phpunit/phpunit": "*",
