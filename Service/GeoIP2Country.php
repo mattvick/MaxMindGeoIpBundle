@@ -14,6 +14,7 @@ use MaxMind\Db\InvalidDatabaseException;
  * @author Matthew Vickery <vickery.matthew@gmail.com>
  *
  * @todo handle Exceptions / errors
+ * @todo methods for the attributes: maxmind, registeredCountry, representedCountry, locales
  */
 class GeoIP2Country
 {
