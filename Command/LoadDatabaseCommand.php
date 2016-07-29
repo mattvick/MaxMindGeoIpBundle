@@ -2,11 +2,14 @@
 
 namespace Insomnia\MaxMindGeoIpBundle\Command;
 
-
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Process\Process;
+use Symfony\Component\Process\Exception\ProcessFailedException;
+use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Filesystem\Exception\IOExceptionInterface;
 
 /**
  * User: avasilenko
@@ -40,33 +43,39 @@ EOT
         ;
     }
 
+    /**
+     * @todo handle failed downloads
+     */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
+        // Download
         $source = $input->getArgument('source');
-
         $tmpFile = tempnam(sys_get_temp_dir(), 'maxmind_geoip');
-        $destination = $this->getContainer()->getParameter('insomnia_max_mind_db_path');
-        $output->writeln(sprintf('<info>Start downloading %s</info>', $source));
+        $output->writeln(sprintf('<info>Downloading %s</info>', $source));
         $output->writeln('...');
-
-        if (!copy($source, $tmpFile)) {
-            $output->writeln('<error>Error during file download occurred</error>');
+        $fs = new Filesystem();
+        try {
+            $fs->copy($source, $tmpFile);
+        } catch (IOExceptionInterface $e) {
+            $output->writeln('<error>An error occurred while downloading the file</error>');
             return;
         }
+        $output->writeln('<info>Download complete</info>');
 
-        $output->writeln('<info>Download completed</info>');
-        $output->writeln('Unzip the downloading data');
+        // Extract
+        $destination = $this->getContainer()->getParameter('insomnia_max_mind_db_path');
+        $output->writeln('<info>Extracting the downloaded file</info>');
         $output->writeln('...');
-        $res = -1;
-        $gzOutput = '';
-        $cmd = 'gunzip < ' . escapeshellarg($tmpFile) . ' > ' . escapeshellarg($destination);
-        exec($cmd, $gzOutput, $res);
-        if ($res != 0) {
+        $cmd = 'gzip -dc ' . escapeshellarg($tmpFile) . ' > ' . escapeshellarg($destination);
+        $process = new Process($cmd);
+        $process->run();
+        if (!$process->isSuccessful()) {
+            // throw new ProcessFailedException($process);
             $output->writeln('<error>Unable to ungzip file</error>');
             $output->writeln(sprintf('<error>Command: %s</error>', $cmd));
-            $output->writeln(sprintf('<error>Output: %s</error>', $gzOutput));
-        } else {
-            $output->writeln('<info>Unzip completed</info>');
+            $output->writeln(sprintf('<error>Output: %s</error>', $process->getOutput()));
+            return;
         }
+        $output->writeln('<info>Unzip completed</info>');
     }
 } 
