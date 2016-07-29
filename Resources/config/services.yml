@@ -6,3 +6,11 @@ services:
     insomnia_max_mind_geo_ip:
         class: MaxMind\Db\Reader
         arguments: ['%insomnia_max_mind_db_path%']
+
+    insomnia_geoip2:
+        class: GeoIp2\Database\Reader
+        arguments: ['%insomnia_max_mind_db_path%']
+
+    insomnia_geoip2.country:
+        class: Insomnia\MaxMindGeoIpBundle\Service\GeoIP2Country
+        arguments: ['@insomnia_geoip2']
